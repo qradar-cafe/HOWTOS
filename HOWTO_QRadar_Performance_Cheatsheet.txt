@@ -1,0 +1,65 @@
+################################################################################
+# trick. Execute these functions so that you don't need to type the same thing all the time. Once executed you can call the function from the command line
+################################################################################
+
+# list rules. Usage
+eplist() { /opt/qradar/support/jmx.sh -p 7799 ; }
+eclist() { /opt/qradar/support/jmx.sh -p 7777 ; }
+inlist() { /opt/qradar/support/jmx.sh -p 7787 ; }
+
+# list mbean in tabular form. Usage: eptabular com.q1labs.sem:application=ecs-ec-ingress.ecs-ec-ingress,type=sources,name=*
+eptabular() { /opt/qradar/support/jmx.sh -p 7799 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' ;}
+ectabular() { /opt/qradar/support/jmx.sh -p 7777 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' ;}
+intabular() { /opt/qradar/support/jmx.sh -p 7787 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' ;}
+
+################################################################################
+
+# top
+top -c
+O COMMAND=application.name
+
+# list ports
+/opt/qradar/support/jmx.sh -l
+
+# check thread load
+/opt/qradar/support/threadTop.sh -p 7799 -e 'CRE Processor'
+
+# check EPS rate
+grep 'Incoming raw event rate' /var/log/qradar.log | sed -e 's/::fff.*-]//' -e 's/(300s:.*//' | tail | column -t -s,
+
+# check filters available
+/opt/qradar/support/jmx.sh -p 7799 | grep filters
+
+# install and uninstall rule timings if no rule mbeans are shown
+/opt/qradar/support/jmx.sh -p 7799 com.q1labs.sem:application=ecs-ep.ecs-ep,name=CRE,type=filters installAllRuleMBeansWithTimings 
+/opt/qradar/support/jmx.sh -p 7799 com.q1labs.sem:application=ecs-ep.ecs-ep,name=CRE,type=filters uninstallAllRuleMBeans
+
+# check ingress queues
+/opt/qradar/support/jmx.sh -p 7787 -b 'com.q1labs.sem:application=ecs-ec-ingress.ecs-ec-ingress,type=sources,name=*' --tabular | column -t -s$'\t' -o$'\t' | sort -t $'\t' -k2,2nr | head -30 | less -S
+
+# check DSMs
+/opt/qradar/support/jmx.sh -p 7777 -b 'com.q1labs.sem:application=ecs-ec.ecs-ec,type=filters,name=DSM,id*' --tabular  | column -t -s$'\t' -o$'\t' | sort -t$'\t' -k2,2nr | grep -v NaN | less -S
+
+# nicely sorted
+dsmlist(){ /opt/qradar/support/jmx.sh -p 7777 -b 'com.q1labs.sem:application=ecs-ec.ecs-ec,type=filters,name=DSM,id*' --tabular  | column -t -s$'\t' -o$'\t' ;}
+( dsmlist | grep MBean; dsmlist | sort -t$'\t' -k2,2nr | head -30 ) | less -S
+
+# show EP queues
+watch "/opt/qradar/support/jmx.sh -p 7799 -b 'com.eventgnosis:type=EP Queues,name=*' --tabular | column -t -s$'\t'"
+
+# check rule performance
+watch "/opt/qradar/support/jmx.sh -p 7799 -b 'com.q1labs.sem:application=ecs-ep.ecs-ep,type=filters,folder=RULES*' -a Name -a CapacityEps -a AverageTestTime --nobeanname --tabular | sort -t$'\t' -k3,3nr | column -t -s$'\t'| head -30"
+
+# check events sent to storage
+watch "/opt/qradar/support/jmx.sh -p 7799 -b com.q1labs.sem:application=ecs-ep.ecs-ep,type=filters,name=CRE"
+
+
+# change number of threads DON'T DO THIS IN PRODUCTION!!!!!
+sed -i '/CRE_THREAD_COUNT/s/=.*/=2/' /opt/qradar/conf/nva.conf
+systemctl restart ecs-ep 
+
+# check logs for pipeline issues
+cat /var/log/qradar.log| grep Pipeline | sed 's/::ff.*-]//'
+
+
+
