@@ -1,0 +1,5 @@
+pods() { kubectl get pods -A -L apps.isc.ibm.com/apphost-name -L  app.kubernetes.io/instance | sort -r ;}
+pod() { export POD="-n `kubectl get pods -A  -l app.kubernetes.io/instance==$1 --no-headers -o custom-columns=NAMESPACE:.metadata.namespace,NAME:.metadata.name| head -${2:-1} | tail -1`" ;}
+podlogs() { kubectl logs -f $POD ;}
+podconnect() { kubectl exec -it $POD -- /bin/bash ;}
+podrestart() { kubectl delete pod $POD ;}
