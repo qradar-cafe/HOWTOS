@@ -1,22 +1,46 @@
-################################################################################
-# trick. Execute these functions so that you don't need to type the same thing all the time. Once executed you can call the function from the command line
-################################################################################
-
 # list rules. Usage
-eplist() { /opt/qradar/support/jmx.sh -p 7799 ; }
-eclist() { /opt/qradar/support/jmx.sh -p 7777 ; }
-inlist() { /opt/qradar/support/jmx.sh -p 7787 ; }
+
+eplist() { /opt/qradar/support/jmx.sh -p 7799 | less -S ;}
+eclist() { /opt/qradar/support/jmx.sh -p 7777 | less -S ;}
+inlist() { /opt/qradar/support/jmx.sh -p 7787 | less -S ;}
+aqlist() { /opt/qradar/support/jmx.sh -p 7782 | less -S ;}
+
+#epvi() { TMP=`mktemp /tmp/jmx_ep_XXXX`; /opt/qradar/support/jmx.sh -p 7799 > $TMP; vi $TMP; rm -f $TMP ;}
+
+eplistone() { /opt/qradar/support/jmx.sh -p 7799 -b "$1"  ;}
+eclistone() { /opt/qradar/support/jmx.sh -p 7777 -b "$1"  ;}
+inlistone() { /opt/qradar/support/jmx.sh -p 7787 -b "$1"  ;}
+aqlistone() { /opt/qradar/support/jmx.sh -p 7782 -b "$1"  ;}
+
+eplistall() { /opt/qradar/support/jmx.sh -p 7799 -b '*' 2>/dev/null | less -S ;}
+eclistall() { /opt/qradar/support/jmx.sh -p 7777 -b '*' 2>/dev/null | less -S ;}
+inlistall() { /opt/qradar/support/jmx.sh -p 7787 -b '*' 2>/dev/null | less -S ;}
+aqlistall() { /opt/qradar/support/jmx.sh -p 7782 -b '*' 2>/dev/null | less -S ;}
 
 # list mbean in tabular form. Usage: eptabular com.q1labs.sem:application=ecs-ec-ingress.ecs-ec-ingress,type=sources,name=*
-eptabular() { /opt/qradar/support/jmx.sh -p 7799 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' ;}
-ectabular() { /opt/qradar/support/jmx.sh -p 7777 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' ;}
-intabular() { /opt/qradar/support/jmx.sh -p 7787 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' ;}
+eptabular() { /opt/qradar/support/jmx.sh -p 7799 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' | less -S ;}
+ectabular() { /opt/qradar/support/jmx.sh -p 7777 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' | less -S ;}
+intabular() { /opt/qradar/support/jmx.sh -p 7787 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' | less -S ;}
+aqtabular() { /opt/qradar/support/jmx.sh -p 7782 -b "$1*" --tabular  | column -t -s$'\t' -o$'\t' | less -S ;}
 
+
+weptabular() { watch "/opt/qradar/support/jmx.sh -p 7799 -b \"$1*\" --tabular  | column -t -s$'\t' -o$'\t'" ;}
+wectabular() { watch "/opt/qradar/support/jmx.sh -p 7777 -b \"$1*\" --tabular  | column -t -s$'\t' -o$'\t'" ;}
+wintabular() { watch "/opt/qradar/support/jmx.sh -p 7787 -b \"$1*\" --tabular  | column -t -s$'\t' -o$'\t'" ;}
+waqtabular() { watch "/opt/qradar/support/jmx.sh -p 7782 -b \"$1*\" --tabular  | column -t -s$'\t' -o$'\t'" ;}
+
+epwatch() { watch "/opt/qradar/support/jmx.sh -p 7799 -b \"$1\"  | grep '${2:-.}'" ;}
+ecwatch() { watch "/opt/qradar/support/jmx.sh -p 7777 -b \"$1\"  | grep '${2:-.}'" ;}
+inwatch() { watch "/opt/qradar/support/jmx.sh -p 7787 -b \"$1\"  | grep '${2:-.}'" ;}
+aqwatch() { watch "/opt/qradar/support/jmx.sh -p 7782 -b \"$1\"  | grep '${2:-.}'" ;}
+
+return 0
 ################################################################################
 
 # top
 top -c
-O COMMAND=application.name
+O 
+COMMAND=application.name
 
 # list ports
 /opt/qradar/support/jmx.sh -l
@@ -48,7 +72,7 @@ dsmlist(){ /opt/qradar/support/jmx.sh -p 7777 -b 'com.q1labs.sem:application=ecs
 watch "/opt/qradar/support/jmx.sh -p 7799 -b 'com.eventgnosis:type=EP Queues,name=*' --tabular | column -t -s$'\t'"
 
 # check rule performance
-watch "/opt/qradar/support/jmx.sh -p 7799 -b 'com.q1labs.sem:application=ecs-ep.ecs-ep,type=filters,folder=RULES*' -a Name -a CapacityEps -a AverageTestTime --nobeanname --tabular | sort -t$'\t' -k3,3nr | column -t -s$'\t'| head -30"
+watch "/opt/qradar/support/jmx.sh -p 7799 -b 'com.q1labs.sem:application=ecs-ep.ecs-ep,type=filters,folder=RULES*' -a Name -a CapacityEps -a AverageTestTime --nobeanname --tabular | grep -v -P '0\.0[ \t]' | sed 's/\.[0-9]*//' | sort -t$'\t' -k2,2n | column -t -s$'\t' | head -30"
 
 # check events sent to storage
 watch "/opt/qradar/support/jmx.sh -p 7799 -b com.q1labs.sem:application=ecs-ep.ecs-ep,type=filters,name=CRE"
@@ -60,6 +84,3 @@ systemctl restart ecs-ep
 
 # check logs for pipeline issues
 cat /var/log/qradar.log| grep Pipeline | sed 's/::ff.*-]//'
-
-
-
