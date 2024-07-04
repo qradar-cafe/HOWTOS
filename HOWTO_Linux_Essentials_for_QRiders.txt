@@ -1,0 +1,301 @@
+################################################################################
+# essential shell (emacs) shortcuts
+################################################################################
+
+# emacs is the default editor. Learn to use it
+$ set -o emacs # Emacs-style editing (default)  https://www.gnu.org/software/emacs/refcards/pdf/refcard.pdf
+$ set -o vi    # vi-style editing
+
+
+# autocomplete
+TAB	# avoid cd; ls; cd
+
+
+# type last word of previous command in history
+alt+.	# keep repeating to go back in history
+	# use num argument to retrieve first, second,... word
+
+# recall 
+!!	# last command		 	!!:1	# first argument of last command, etc
+!*	# last command's arguments
+
+# search back in history
+ctrl+r	# type part of the command, then keep repeating to go back in history
+
+# move to
+ctrl+a	# start of line
+ctrl+e	# end of line
+alt+b	# back one word
+alt+f	# forward one word
+
+# remove text
+ctrl+k 	# remove all to the right
+ctrl+u  # remove all to the left
+
+# remove words
+alt+d		# remove next word	
+alt+backspace	# remove previous word
+
+# past text
+ctrl+y	# yank
+
+# use jobs 
+vi file.txt	# open file
+ctrl+z		# pause job 
+jobs		# see list of jobs
+fg		# jobs %2 if needed
+
+# other util shortcuts
+ctrl+l		# clear
+ctrl+d		# exit
+
+
+# EDITOR
+EDITOR=vi	# if not already set
+ctrl+x ctrl-e
+
+################################################################################
+# essential bash tricks
+################################################################################
+
+# understand "" and ''
+echo "$PATH"	# will show the content of $PATH variable
+echo '$PATH'	# will show $PATH string
+
+# exit code true or false
+grep hello /path/to/file && echo yes || echo no
+
+# redirections and multiline commands
+grep hello /path/to/file > /dev/null 2>&1 \
+	&& echo yes \
+	|| echo no
+
+
+# for loop
+for i in /path/to/file*.txt
+do
+	echo $i
+done
+
+# while loop
+while true
+do
+	date
+	sleep 1
+done
+
+# while read
+ls -l /opt/ | while read line
+do
+	echo $line
+done
+
+# create variable
+VAR=$(command)
+VAR=`command`
+
+# replace and default
+echo ${VAR/old/new}	# replace variable content
+echo ${VAR:-default}	# if variable empty it will use default
+
+# example 1
+touch file_{01..10}.txt
+for i in `ls *.txt`
+do
+	mv $i ${i/txt/csv}
+done
+
+# example 2
+ls *.csv | while read i
+do
+	mv $i ${i/csv/txt}
+done
+
+# example 3 try these options
+ll *.csv | while read i 
+ll *.csv | while read i j
+ll *.csv | while read i{1..9}
+do
+	echo $i
+	echo $j
+	echo $i9
+done
+
+# HERE file
+cat << EOF
+one two
+three four
+EOF
+
+# functions
+mygrep() { grep $1 /var/log/qradar.log ;}
+
+
+################################################################################
+# essential tools
+################################################################################
+
+# tail
+tail /var/log/qradar.log
+tail -f /var/log/qradar.log
+tail -f /var/log/qradar.log | grep 'Incoming raw event rate'
+
+# grep 
+grep 'Incoming raw event rate' /var/log/qradar.log
+zgrep 'Incoming raw event rate' /var/log/qradar.old/qradar.log.1.gz
+grep -B 1	# one line (B)efore, (A)fter, (C) both
+
+# sed 
+grep 'Incoming raw event rate' /var/log/qradar.log | sed -e 's/::fff.*-]//' -e 's/(300s:.*//'
+sed -i.bak 's/old/new/' file.txt	# replace old with new. keep a backup in file.txt.bak
+
+# awk
+ls -l | awk '{print $9}'	# only get 9th column
+
+# sort and uniq
+ls -l | awk '{print $1}' | sort | uniq -c | sort -n	# how many times does each value happen?
+df -h| sort -k5,5n	# sort by 5th column		# sort by 5th column
+
+# column
+cat /etc/protocols | grep -v '^#' | column -t -l 4	# show text nicely formated in columns
+
+# less
+less -S 	# will show long text nicelly (use arrows to move around)
+
+# watch
+watch date
+
+# date -I
+cp file.txt file.txt.bak_`date -I` # 2024-07-04
+
+# nohup and screen
+nohup command &		# if you need to run something in background (good for ssh timeouts, etc)
+
+screen			# full session in background (you can detach from it)
+command			# run commands
+ctrl+a ctrl-d		# detach
+screen -ls		# list screen sessions
+screen -r 		# reattach 
+
+
+################################################################################
+# essential vi 
+################################################################################
+
+# vi editor advanced cheat sheet
+https://www.reddit.com/r/vim/comments/32r85c/this_is_my_favorite_vim_cheat_sheet_does_anyone/#lightbox
+
+# learn by example
+10ihello world, ESC		# write hello world, 10 times
+yy10p				# copy line, paste 10 times
+:set number			# show line numbers
+:set nonumber			# hide line numbers
+:%s/^/\=line('.').") "  /	# insert line number in the text 
+:20				# go to line 20
+5dd				# delete 5 lines
+:,+4d				# delete next 5 lines
+vFIN,DOWN,DOWN,DOWN,DOWNd	# delete selected 5 lines
+:s/hello/bye/			# substitute hello with bye
+:s/hello/bye/g			# substitute hello with bye, global (all occurrences in the line)
+:+5,+10s/hello/bye/g		# substitute hello with bye in 5 lines starting from the fifth after current
+:,$s/hello/bye/			# substitute hello with bye in all lines from current till the end
+:%s/bye/hello/g			# substitute bye with hello in all the document
+/hello				# search hello
+cwbyeESC			# change word to bye
+n				# find next occurrence of previous search (hello)
+.				# repeat last action (change word)
+ndw				# find next occurrence and delete word
+n2dw				# find next occurrence and delete 2 words
+n2dW				# find next occurrence and delte 2 Words (including punctuation like ,)
+u				# undo last change
+dd				# delete line
+u				# undo
+3WD				# move 2 Words forward and Delete to the end of the line
+p				# paste deleted
+:10				# go to line 10
+ma				# mark position a
+:20				# go to line 20
+mb				# mark position b
+'a				# go back to position a
+'b				# go to position b
+''				# go to last position
+''				# go to last position
+:'a,'bd				# delete from 'a to 'b
+u				# undo
+:'a,'bs/hello/bye/g		# replace between 'a and 'b
+:/bye/s/world/my friend/g	# replace world with my friend in all lines that have /bye
+/\d				# find next number
+Ctrl+a (few times)		# increases number
+Ctrl+x (few times)		# decreases number
+5Ctrl+a 			# increases number by 5
+:s/\(hello\) \(world\)/\2 \1/g	# swap hello world in current line globally
+:5,$d				# delete all lines from line 5
+:g/4/d				# globally (in all the file) delete all the lines that have 4 in it
+:g/1/j				# globally (in all the file) find all lines that have 1 in it and join (with the next line)
+:set nowrap			# don't wrap lines
+:g!/\d/d			# globally (in all the file) delete all the lines that don't (!) have numbers (\d)
+
+##############
+## PRO TIPS ##
+##############
+
+# execute external commands
+:%d				# clear all the file
+:r! ps -ef			# read the result of ps -ef command
+:%! grep firefox		# delete all lines that don't have firefox (same as :g!/firefox/d but using external commands)
+:%! sort -r			# sort text in reverse order
+
+# use buffers
+vi *.txt			# opens many buffers
+:set hidden			# if you want to be able to move to the next buffer without saving the changes first
+:n				# go to next buffer (changes must be saved)
+F6				# switch buffer
+nF6				# go to n buffer
+
+# use tabs
+vi -p *.txt			# opens each file in new tab
+Ctrl+PgUp/Down			# move to prev/next tab
+
+# split windows
+vi -o *.txt			# opens files in different windows horizontal
+vi -O *.txt			# opens files in different windows vertical
+
+:new				# split window horizontally (empty) :q to close
+:sp				# split window horizontally (with same buffer)
+3dd				# do some actions (will be done in both windows)
+move around			# you can have 2 separate views of the same file
+ctrl+w,ctrl+w			# to change window
+:vs				# open a vertical split window
+ctrl+w,arrow			# use arrows to move to different windows
+:q				# will close curren split window, but the rest will remain
+:only				# will close all split windows except current one
+
+
+
+
+# split window with other content
+:belowright new | r ! ls -l 	# open a new windows (below, by default it's above) and load some content
+
+
+
+# remap a key binding 
+:nnoremap s :-4,y<CR>2o<Esc>p4j	# map key s to a sequence of actions:
+					:-4,y<CR>	# yank previous 4 lines
+					2o<Esc>		# open 2 new lines
+					p		# paste yanked lines
+					4j		# move down 4 lines
+s				# press key s to execute all those actions
+
+# record a script
+qa				# start recording in register @a
+3k				# move 3 lines up
+4yy				# yank 4 lines
+3j				# move 3 lines down
+2oESC				# open 2 lines below
+p				# paste yanked lines
+3j				# move 3 lines down
+q				# stop recording
+
+# reply script
+@a				# reply recording @a
+3@a				# reply recording @a 3 times
